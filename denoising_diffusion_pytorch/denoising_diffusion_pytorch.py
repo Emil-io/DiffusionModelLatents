@@ -1,4 +1,5 @@
 
+from torchvision.transforms import functional as F
 
 ###
 
@@ -883,7 +884,14 @@ class Dataset(Dataset):
         if augment_vertical_flip:
             self.transforms.append(T.RandomVerticalFlip(p=0.5))
         if augment_rotations:
-            self.transforms.append(T.RandomRotation(degrees=[90, 180, 270]))
+            self.transforms.append(
+                T.RandomChoice([
+                    T.RandomRotation(degrees=(0, 0)),  # 0 degrees
+                    T.RandomRotation(degrees=(90, 90)),  # 90 degrees
+                    T.RandomRotation(degrees=(180, 180)),  # 180 degrees
+                    T.RandomRotation(degrees=(270, 270))  # 270 degrees
+                ])
+            )
         self.transforms = T.Compose(self.transforms)
 
     def __len__(self):
