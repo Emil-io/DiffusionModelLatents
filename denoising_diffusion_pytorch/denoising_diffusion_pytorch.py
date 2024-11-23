@@ -1,5 +1,4 @@
-from google.colab import files
-from google.colab import drive
+
 
 ###
 
@@ -967,8 +966,6 @@ class Trainer:
 
         ### adjustments
 
-        drive.mount('/content/drive')
-
         self.vae_scale_factor = vae_scale_factor,
         self.crop_size = crop_size
         self.vae = vae
@@ -1087,7 +1084,6 @@ class Trainer:
         }
 
         torch.save(data, str(self.results_folder / f'model-{milestone}.pt'))
-        torch.save(data, f"/content/drive/My Drive/model-{milestone}.pt")
 
     def load(self, milestone):
         accelerator = self.accelerator
