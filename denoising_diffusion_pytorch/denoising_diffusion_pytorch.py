@@ -900,7 +900,7 @@ class Dataset(Dataset):
     def __getitem__(self, index):
         # Load the latent tensor
         path = self.paths[index]
-        latent = torch.load(path, weights_only=True)
+        latent = torch.load(path, weights_only=True).to(dtype=torch.float32)
         latent = latent.squeeze(0)
 
         # Rescale the tensor
@@ -972,7 +972,7 @@ class Trainer:
     ):
         super().__init__()
 
-        ### adjustments test
+        ### adjustments
 
         self.vae_scale_factor = vae_scale_factor,
         self.crop_size = crop_size
