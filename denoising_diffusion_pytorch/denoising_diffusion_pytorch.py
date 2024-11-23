@@ -883,7 +883,7 @@ class Dataset(Dataset):
         if augment_vertical_flip:
             self.transforms.append(T.RandomVerticalFlip(p=0.5))
         if augment_rotations:
-            self.transforms.append(TF.rotate(latent, angle=random.choice([90, 180, 270])))
+            self.transforms.append(T.RandomRotation(degrees=[90, 180, 270]))
         self.transforms = T.Compose(self.transforms)
 
     def __len__(self):
