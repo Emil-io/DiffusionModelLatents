@@ -1167,7 +1167,7 @@ class Trainer:
                                     latent = latent.unsqueeze(0)
 
                                 decoded_image = self.vae.decode(latent).sample
-                                decoded_image = self.vae_image_processor.postprocess(decoded_image, output_type="pt")
+                                decoded_image = self.vae_image_processor.postprocess(decoded_image, output_type="pt").squeeze(dim=0)
                                 decoded_images.append(decoded_image)
 
                             for i, img in enumerate(decoded_images):
