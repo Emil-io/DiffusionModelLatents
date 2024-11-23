@@ -878,27 +878,24 @@ class Dataset(Dataset):
 
         self.paths = list(Path(folder).glob("*.pt"))
 
-        print("-------")
-        print(len(self.paths))
-
         assert len(self.paths) > 0, f"No .pt files found in {folder}"
 
         # Transformations
         self.transforms = []
-        # if augment_horizontal_flip:
-        #     self.transforms.append(T.RandomHorizontalFlip(p=0.5))
-        # if augment_vertical_flip:
-        #     self.transforms.append(T.RandomVerticalFlip(p=0.5))
-        # if augment_rotations:
-        #     self.transforms.append(
-        #         T.RandomChoice([
-        #             T.RandomRotation(degrees=(0, 0)),  # 0 degrees
-        #             T.RandomRotation(degrees=(90, 90)),  # 90 degrees
-        #             T.RandomRotation(degrees=(180, 180)),  # 180 degrees
-        #             T.RandomRotation(degrees=(270, 270))  # 270 degrees
-        #         ])
-        #     )
-        self.transforms.append(T.CenterCrop(size=(128, 128)))
+        if augment_horizontal_flip:
+            self.transforms.append(T.RandomHorizontalFlip(p=0.5))
+        if augment_vertical_flip:
+            self.transforms.append(T.RandomVerticalFlip(p=0.5))
+        if augment_rotations:
+            self.transforms.append(
+                T.RandomChoice([
+                    T.RandomRotation(degrees=(0, 0)),  # 0 degrees
+                    T.RandomRotation(degrees=(90, 90)),  # 90 degrees
+                    T.RandomRotation(degrees=(180, 180)),  # 180 degrees
+                    T.RandomRotation(degrees=(270, 270))  # 270 degrees
+                ])
+            )
+        self.transforms.append(T.RandomCrop(size=(128, 128)))
         self.transforms = T.Compose(self.transforms)
 
     def __len__(self):
@@ -909,8 +906,6 @@ class Dataset(Dataset):
         path = self.paths[index]
         latent = torch.load(path, weights_only=True).to(dtype=torch.float32)
         latent = latent.squeeze(0)
-        # if index % 50 == 0:  # Only print for every 50th iteration
-        print(f"{index} Reading: {latent.shape}")
 
         # Rescale the tensor
         latent = latent * self.scale_factor
@@ -918,16 +913,6 @@ class Dataset(Dataset):
         # Apply augmentations
         latent = self.transforms(latent)
         latent = self.sigmoid_transform(latent)
-
-        # if index % 50 == 0:  # Only print for every 50th iteration
-        is_within_range = torch.all((latent >= -1) & (latent <= 1))
-        print(f"{index} Reading: All entries in latent are within the range [-1, 1]: {is_within_range}")
-
-        # Extract a random crop
-        # _, h, w = latent.shape
-        # top = torch.randint(0, h - self.crop_size + 1, (1,)).item()
-        # left = torch.randint(0, w - self.crop_size + 1, (1,)).item()
-        # latent = latent[:, top : top + self.crop_size, left : left + self.crop_size]
 
         return latent
 
@@ -1031,7 +1016,6 @@ class Trainer:
 
         # dataset and dataloader
 
-        print("Init dataset")
         self.ds = Dataset(folder=folder, scale_factor=vae_scale_factor, crop_size=crop_size, autoencoder=vae, sigmoid_transform=self.sigmoid_transform)
 
         assert len(self.ds) >= 100, 'you should have at least 100 images in your folder. at least 10k images recommended'
