@@ -974,7 +974,7 @@ class Trainer:
 
         ### adjustments
 
-        self.vae_scale_factor = vae_scale_factor,
+        self.vae_scale_factor = vae_scale_factor
         self.crop_size = crop_size
         self.vae = vae
 
