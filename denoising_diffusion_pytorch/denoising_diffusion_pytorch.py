@@ -964,7 +964,7 @@ class Trainer:
     ):
         super().__init__()
 
-        ### adjustments
+        ### adjustments test
 
         self.vae_scale_factor = vae_scale_factor,
         self.crop_size = crop_size
