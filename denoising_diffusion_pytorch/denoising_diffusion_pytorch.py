@@ -1168,7 +1168,6 @@ class Trainer:
 
                                 decoded_image = self.vae.decode(latent).sample
                                 decoded_image = self.vae_image_processor.postprocess(decoded_image, output_type="pt")
-                                decoded_image = torch.from_numpy(decoded_image)
                                 decoded_images.append(decoded_image)
 
                             all_images = torch.stack(decoded_images, dim=0)
