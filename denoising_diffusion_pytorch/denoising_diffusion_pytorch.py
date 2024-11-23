@@ -908,8 +908,8 @@ class Dataset(Dataset):
         path = self.paths[index]
         latent = torch.load(path, weights_only=True).to(dtype=torch.float32)
         latent = latent.squeeze(0)
-        print(f"{index} Reading: {latent.shape}")
-
+        if index % 50 == 0:  # Only print for every 50th iteration
+            print(f"{index} Reading: {latent.shape}")
 
         # Rescale the tensor
         latent = latent * self.scale_factor
@@ -918,8 +918,9 @@ class Dataset(Dataset):
         latent = self.transforms(latent)
         latent = self.sigmoid_transform(latent)
 
-        is_within_range = torch.all((latent >= -1) & (latent <= 1))
-        print(f"{index} Reading: All entries in latent are within the range [-1, 1]: {is_within_range}")
+        if index % 50 == 0:  # Only print for every 50th iteration
+            is_within_range = torch.all((latent >= -1) & (latent <= 1))
+            print(f"{index} Reading: All entries in latent are within the range [-1, 1]: {is_within_range}")
 
         # Extract a random crop
         # _, h, w = latent.shape
