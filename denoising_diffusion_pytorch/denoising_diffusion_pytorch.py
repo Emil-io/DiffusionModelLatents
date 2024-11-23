@@ -1170,9 +1170,6 @@ class Trainer:
                                 decoded_image = self.vae_image_processor.postprocess(decoded_image, output_type="pt").squeeze(dim=0)
                                 decoded_images.append(decoded_image)
 
-                            for i, img in enumerate(decoded_images):
-                                print(f"Image {i} shape: {img.shape}")
-
                             all_images = torch.stack(decoded_images, dim=0)
 
                             utils.save_image(
