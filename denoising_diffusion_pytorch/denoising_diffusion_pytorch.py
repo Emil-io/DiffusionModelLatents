@@ -1164,7 +1164,7 @@ class Trainer:
                                 if latent.dim() == 3:
                                     latent = latent.unsqueeze(0)
 
-                                decoded_image = self.vae.decode(latent).squeeze(0)
+                                decoded_image = self.vae.decode(latent).sample.squeeze(0)
                                 decoded_image = self.vae.image_processor.postprocess(decoded_image, output_type="tensor")
                                 decoded_images.append(decoded_image)
 
