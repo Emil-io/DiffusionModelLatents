@@ -878,6 +878,7 @@ class Dataset(Dataset):
 
         self.paths = list(Path(folder).glob("*.pt"))
 
+        print("-------")
         print(len(self.paths))
 
         assert len(self.paths) > 0, f"No .pt files found in {folder}"
@@ -1030,6 +1031,7 @@ class Trainer:
 
         # dataset and dataloader
 
+        print("Init dataset")
         self.ds = Dataset(folder=folder, scale_factor=vae_scale_factor, crop_size=crop_size, autoencoder=vae, sigmoid_transform=self.sigmoid_transform)
 
         assert len(self.ds) >= 100, 'you should have at least 100 images in your folder. at least 10k images recommended'
