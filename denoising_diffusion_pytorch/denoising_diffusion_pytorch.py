@@ -1,4 +1,5 @@
 from google.colab import files
+from google.colab import drive
 
 ###
 
@@ -960,16 +961,17 @@ class Trainer:
         save_best_and_latest_only = False,
         vae_scale_factor,
         crop_size,
-        vae,
-        local_checkpoint_path
+        vae
     ):
         super().__init__()
 
         ### adjustments
+
+        drive.mount('/content/drive')
+
         self.vae_scale_factor = vae_scale_factor,
         self.crop_size = crop_size
         self.vae = vae
-        self.local_checkpoint_path = local_checkpoint_path
 
         # accelerator
 
@@ -1085,7 +1087,7 @@ class Trainer:
         }
 
         torch.save(data, str(self.results_folder / f'model-{milestone}.pt'))
-        files.download(str(local_checkpoint_path))  # Download via Colab interface
+        torch.save(data, f"/content/drive/My Drive/model-{milestone}.pt")
 
     def load(self, milestone):
         accelerator = self.accelerator
