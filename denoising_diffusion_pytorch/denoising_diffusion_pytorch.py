@@ -1,5 +1,5 @@
 
-from torchvision.transforms import functional as F
+from torch.distributions import transforms
 
 ###
 
@@ -857,6 +857,7 @@ class Dataset(Dataset):
         augment_rotations=True,
         crop_size=128,
         autoencoder=None,
+        sigmoid_transform = None
     ):
         """
         Args:
@@ -873,6 +874,7 @@ class Dataset(Dataset):
         self.scale_factor = scale_factor
         self.crop_size = crop_size
         self.autoencoder = autoencoder
+        self.sigmoid_transform = sigmoid_transform
 
         self.paths = list(Path(folder).glob("*.pt"))
         assert len(self.paths) > 0, f"No .pt files found in {folder}"
@@ -908,6 +910,7 @@ class Dataset(Dataset):
 
         # Apply augmentations
         latent = self.transforms(latent)
+        latent = self.sigmoid_transform(latent)
 
         # Extract a random crop
         _, h, w = latent.shape
@@ -980,6 +983,8 @@ class Trainer:
         self.vae = vae
         self.vae_image_processor = vae_image_processor
 
+        self.sigmoid_transform = transforms.SigmoidTransform()
+
         # accelerator
 
         self.accelerator = Accelerator(
@@ -1015,7 +1020,7 @@ class Trainer:
 
         # dataset and dataloader
 
-        self.ds = Dataset(folder=folder, scale_factor=vae_scale_factor, crop_size=crop_size, autoencoder=vae)
+        self.ds = Dataset(folder=folder, scale_factor=vae_scale_factor, crop_size=crop_size, autoencoder=vae, sigmoid_transform=self.sigmoid_transform)
 
         assert len(self.ds) >= 100, 'you should have at least 100 images in your folder. at least 10k images recommended'
 
@@ -1165,6 +1170,7 @@ class Trainer:
                                 is_within_range = torch.all((latent >= -1) & (latent <= 1))
                                 print(f"All entries in latent are within the range [-1, 1]: {is_within_range}")
 
+                                self.sigmoid_transform.inv(latent)
                                 latent = latent / self.vae_scale_factor
 
                                 if latent.dim() == 3:
