@@ -1170,7 +1170,7 @@ class Trainer:
                                 is_within_range = torch.all((latent >= -1) & (latent <= 1))
                                 print(f"All entries in latent are within the range [-1, 1]: {is_within_range}")
 
-                                self.sigmoid_transform.inv(latent)
+                                latent = self.sigmoid_transform.inv(latent)
                                 latent = latent / self.vae_scale_factor
 
                                 if latent.dim() == 3:
