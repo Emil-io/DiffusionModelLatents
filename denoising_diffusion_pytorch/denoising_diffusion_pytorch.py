@@ -877,6 +877,9 @@ class Dataset(Dataset):
         self.sigmoid_transform = sigmoid_transform
 
         self.paths = list(Path(folder).glob("*.pt"))
+
+        print(len(self.paths))
+
         assert len(self.paths) > 0, f"No .pt files found in {folder}"
 
         # Transformations
@@ -905,6 +908,8 @@ class Dataset(Dataset):
         path = self.paths[index]
         latent = torch.load(path, weights_only=True).to(dtype=torch.float32)
         latent = latent.squeeze(0)
+        print(f"{index} Reading: {latent.shape}")
+
 
         # Rescale the tensor
         latent = latent * self.scale_factor
@@ -912,6 +917,9 @@ class Dataset(Dataset):
         # Apply augmentations
         latent = self.transforms(latent)
         latent = self.sigmoid_transform(latent)
+
+        is_within_range = torch.all((latent >= -1) & (latent <= 1))
+        print(f"{index} Reading: All entries in latent are within the range [-1, 1]: {is_within_range}")
 
         # Extract a random crop
         # _, h, w = latent.shape
