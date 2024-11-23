@@ -1149,13 +1149,25 @@ class Trainer:
 
                         with torch.inference_mode():
                             milestone = self.step // self.save_and_sample_every
-                            batches = num_to_groups(self.num_samples, self.batch_size)
-                            all_images_list = list(map(lambda n: self.ema.ema_model.sample(batch_size=n), batches))
 
-                        all_images = torch.cat(all_images_list, dim = 0)
+                            batches = num_to_groups(self.num_samples, 1)
+                            all_latents_list = [self.ema.ema_model.sample(batch_size=1) for _ in batches]
 
-                        utils.save_image(all_images, str(self.results_folder / f'sample-{milestone}.png'), nrow = int(math.sqrt(self.num_samples)))
+                            decoded_images = []
+                            for latent in all_latents_list:
+                                latent = latent / self.vae_scale_factor
+                                decoded_image = self.vae.decode(latent).squeeze(0)
+                                decoded_images.append(decoded_image)
 
+                            all_images = torch.stack(decoded_images, dim=0)
+
+                            utils.save_image(
+                                all_images,
+                                str(self.results_folder / f'sample-{milestone}.png'),
+                                nrow=int(math.sqrt(self.num_samples))  # Number of rows/cols in the grid
+                            )
+
+                            print(f"Saved grid image: sample-{milestone}.png")
                         # whether to calculate fid
 
                         if self.calculate_fid:
