@@ -953,9 +953,17 @@ class Trainer:
         inception_block_idx = 2048,
         max_grad_norm = 1.,
         num_fid_samples = 50000,
-        save_best_and_latest_only = False
+        save_best_and_latest_only = False,
+        vae_scale_factor,
+        crop_size,
+        vae
     ):
         super().__init__()
+
+        ### adjustments
+        self.vae_scale_factor = vae_scale_factor,
+        self.crop_size = crop_size
+        self.vae = vae
 
         # accelerator
 
@@ -992,7 +1000,7 @@ class Trainer:
 
         # dataset and dataloader
 
-        self.ds = Dataset(folder, self.image_size, augment_horizontal_flip = augment_horizontal_flip, convert_image_to = convert_image_to)
+        self.ds = Dataset(folder=folder, scale_factor=vae_scale_factor, crop_size=crop_size, autoencoder=vae)
 
         assert len(self.ds) >= 100, 'you should have at least 100 images in your folder. at least 10k images recommended'
 
