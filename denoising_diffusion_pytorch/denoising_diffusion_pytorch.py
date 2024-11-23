@@ -968,7 +968,8 @@ class Trainer:
         save_best_and_latest_only = False,
         vae_scale_factor,
         crop_size,
-        vae
+        vae,
+        vae_image_processor
     ):
         super().__init__()
 
@@ -977,6 +978,7 @@ class Trainer:
         self.vae_scale_factor = vae_scale_factor
         self.crop_size = crop_size
         self.vae = vae
+        self.vae_image_processor = vae_image_processor
 
         # accelerator
 
@@ -1165,7 +1167,7 @@ class Trainer:
                                     latent = latent.unsqueeze(0)
 
                                 decoded_image = self.vae.decode(latent).sample.squeeze(0)
-                                decoded_image = self.vae.image_processor.postprocess(decoded_image, output_type="tensor")
+                                decoded_image = self.vae_image_processor.postprocess(decoded_image, output_type="tensor")
                                 decoded_images.append(decoded_image)
 
                             all_images = torch.stack(decoded_images, dim=0)
