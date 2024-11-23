@@ -1161,8 +1161,8 @@ class Trainer:
                             for latent in all_latents_list:
                                 latent = latent / self.vae_scale_factor
 
-                                if decoded_image_batch.dim() == 3:
-                                    decoded_image_batch = decoded_image_batch.unsqueeze(0)
+                                if latent.dim() == 3:
+                                    latent = latent.unsqueeze(0)
 
                                 decoded_image = self.vae.decode(latent).squeeze(0)
                                 decoded_image = self.vae.image_processor.postprocess(decoded_image, output_type="tensor")
