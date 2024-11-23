@@ -846,33 +846,85 @@ class Dataset(Dataset):
     def __init__(
         self,
         folder,
-        image_size,
-        exts = ['jpg', 'jpeg', 'png', 'tiff'],
-        augment_horizontal_flip = False,
-        convert_image_to = None
+        scale_factor=1.0,
+        augment_horizontal_flip=True,
+        augment_vertical_flip=True,
+        augment_rotations=True,
+        crop_size=128,
+        autoencoder=None,
     ):
+        """
+        Args:
+            folder (str): Directory containing .pt files.
+            scale_factor (float): Factor to scale the tensor values.
+            augment_horizontal_flip (bool): Whether to apply horizontal flip.
+            augment_vertical_flip (bool): Whether to apply vertical flip.
+            augment_rotations (bool): Whether to apply rotations (90°, 180°, 270°).
+            crop_size (int): Size of the cutouts.
+            autoencoder (nn.Module): Autoencoder for decoding tensors into images.
+        """
         super().__init__()
         self.folder = folder
-        self.image_size = image_size
-        self.paths = [p for ext in exts for p in Path(f'{folder}').glob(f'**/*.{ext}')]
+        self.scale_factor = scale_factor
+        self.crop_size = crop_size
+        self.autoencoder = autoencoder
 
-        maybe_convert_fn = partial(convert_image_to_fn, convert_image_to) if exists(convert_image_to) else nn.Identity()
+        self.paths = list(Path(folder).glob("*.pt"))
+        assert len(self.paths) > 0, f"No .pt files found in {folder}"
 
-        self.transform = T.Compose([
-            T.Lambda(maybe_convert_fn),
-            T.Resize(image_size),
-            T.RandomHorizontalFlip() if augment_horizontal_flip else nn.Identity(),
-            T.CenterCrop(image_size),
-            T.ToTensor()
-        ])
+        # Transformations
+        self.transforms = []
+        if augment_horizontal_flip:
+            self.transforms.append(T.RandomHorizontalFlip(p=0.5))
+        if augment_vertical_flip:
+            self.transforms.append(T.RandomVerticalFlip(p=0.5))
+        if augment_rotations:
+            self.transforms.append(TF.rotate(latent, angle=random.choice([90, 180, 270])))
+        self.transforms = T.Compose(self.transforms)
 
     def __len__(self):
         return len(self.paths)
 
     def __getitem__(self, index):
+        # Load the latent tensor
         path = self.paths[index]
-        img = Image.open(path)
-        return self.transform(img)
+        latent = torch.load(path, weights_only=True)
+        latent = latent.squeeze(0)
+
+        # Rescale the tensor
+        latent = latent * self.scale_factor
+
+        # Apply augmentations
+        latent = self.transforms(latent)
+
+        # Extract a random crop
+        _, h, w = latent.shape
+        top = torch.randint(0, h - self.crop_size + 1, (1,)).item()
+        left = torch.randint(0, w - self.crop_size + 1, (1,)).item()
+        latent = latent[:, top : top + self.crop_size, left : left + self.crop_size]
+
+        return latent
+
+    def decode_and_display(self, latent_tensor, save_path=None):
+        """
+        Decode a latent tensor into an image using the autoencoder and display it.
+
+        Args:
+            latent_tensor (torch.Tensor): Latent tensor to decode.
+            save_path (str, optional): Path to save the decoded image. Defaults to None.
+        """
+        assert self.autoencoder is not None, "Autoencoder must be provided to decode latents."
+
+        with torch.no_grad():
+            image = self.autoencoder.decode(latent_tensor.unsqueeze(0))  # Decode the latent
+            image = image.squeeze(0).clamp(0, 1)  # Clamp values for visualization
+
+        # Convert to PIL Image and display or save
+        image_pil = T.ToPILImage()(image.cpu())
+        if save_path:
+            image_pil.save(save_path)
+        else:
+            image_pil.show()
 
 # trainer class
 
