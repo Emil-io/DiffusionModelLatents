@@ -911,7 +911,7 @@ class Dataset(Dataset):
         path = self.paths[index]
         latent = torch.load(path, weights_only=True).to(dtype=torch.float32)
 
-        print(latent.shape())
+        print(latent.shape)
 
         _, _, height, width = latent.shape  # Assuming tensor is in (B, C, H, W) format
         if self.crop_size != height or self.crop_size != width:
