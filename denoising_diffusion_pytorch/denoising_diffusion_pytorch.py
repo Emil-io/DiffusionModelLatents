@@ -911,8 +911,6 @@ class Dataset(Dataset):
         path = self.paths[index]
         latent = torch.load(path, weights_only=True).to(dtype=torch.float32)
 
-        print(latent.shape)
-
         _, _, height, width = latent.shape  # Assuming tensor is in (B, C, H, W) format
         if self.crop_size != height or self.crop_size != width:
             print(f"Warning: The crop size ({self.crop_size}) is not correct "
@@ -1181,6 +1179,10 @@ class Trainer:
                             decoded_images = []
                             for latent in all_latents_list:
 
+                                test = torch.all((latent >= -1) & (latent <= 1))
+                                print(f"Betw. -1 and 1: {test}")
+                                test = torch.all((latent >= 0) & (latent <= 1))
+                                print(f"Betw. 0 and 1: {test}")
                                 test = torch.all((latent >= -1) & (latent <= 1))
                                 print(f"Betw. -1 and 1: {test}")
                                 test = torch.all((latent >= 0) & (latent <= 1))
