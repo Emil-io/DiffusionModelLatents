@@ -880,6 +880,11 @@ class Dataset(Dataset):
 
         assert len(self.paths) > 0, f"No .pt files found in {folder}"
 
+        self.mean = 1.1045
+        self.sd = 1.9434
+
+        self.normal_dist = torch.distributions.Normal(1, 1)
+
         # Transformations
         self.transforms = []
         if augment_horizontal_flip:
@@ -895,7 +900,7 @@ class Dataset(Dataset):
                     T.RandomRotation(degrees=(270, 270))  # 270 degrees
                 ])
             )
-        self.transforms.append(T.RandomCrop(size=(128, 128)))
+        self.transforms.append(T.RandomCrop(size=(crop_size, crop_size)))
         self.transforms = T.Compose(self.transforms)
 
     def __len__(self):
@@ -905,14 +910,21 @@ class Dataset(Dataset):
         # Load the latent tensor
         path = self.paths[index]
         latent = torch.load(path, weights_only=True).to(dtype=torch.float32)
+
+        _, _, height, width = latent.shape  # Assuming tensor is in (B, C, H, W) format
+        if self.crop_size > min(height, width):
+            print(f"Warning: The crop size ({self.crop_size}) is larger than the minimum dimension "
+                  f"({min(height, width)}) of the latent tensor.")
+
         latent = latent.squeeze(0)
 
         # Rescale the tensor
-        latent = latent * self.scale_factor
+        latent = (latent - self.mean) / self.sd
+
+        latent = self.normal_dist.cdf(latent)
 
         # Apply augmentations
         latent = self.transforms(latent)
-        latent = self.sigmoid_transform(latent)
 
         return latent
 
@@ -980,6 +992,7 @@ class Trainer:
         self.vae_image_processor = vae_image_processor
 
         self.sigmoid_transform = transforms.SigmoidTransform()
+        self.normal_dist = torch.distributions.Normal(1, 1)
 
         # accelerator
 
@@ -1157,6 +1170,9 @@ class Trainer:
                         with torch.inference_mode():
                             milestone = self.step // self.save_and_sample_every
 
+                            mean = 1.1045
+                            sd = 1.9434
+
                             batches = num_to_groups(self.num_samples, 1)
                             all_latents_list = [self.ema.ema_model.sample(batch_size=1) for _ in batches]
 
@@ -1166,8 +1182,8 @@ class Trainer:
                                 is_within_range = torch.all((latent >= -1) & (latent <= 1))
                                 print(f"All entries in latent are within the range [-1, 1]: {is_within_range}")
 
-                                latent = self.sigmoid_transform.inv(latent)
-                                latent = latent / self.vae_scale_factor
+                                latent = self.normal_dist.icdf(latent)
+                                latent = (latent * sd) + mean
 
                                 if latent.dim() == 3:
                                     latent = latent.unsqueeze(0)
