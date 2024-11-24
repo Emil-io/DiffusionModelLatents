@@ -891,15 +891,15 @@ class Dataset(Dataset):
             self.transforms.append(T.RandomHorizontalFlip(p=0.5))
         if augment_vertical_flip:
             self.transforms.append(T.RandomVerticalFlip(p=0.5))
-        if augment_rotations:
-            self.transforms.append(
-                T.RandomChoice([
-                    T.RandomRotation(degrees=(0, 0)),  # 0 degrees
-                    T.RandomRotation(degrees=(90, 90)),  # 90 degrees
-                    T.RandomRotation(degrees=(180, 180)),  # 180 degrees
-                    T.RandomRotation(degrees=(270, 270))  # 270 degrees
-                ])
-            )
+        # if augment_rotations:
+        #     self.transforms.append(
+        #         T.RandomChoice([
+        #             T.RandomRotation(degrees=(0, 0)),  # 0 degrees
+        #             T.RandomRotation(degrees=(90, 90)),  # 90 degrees
+        #             T.RandomRotation(degrees=(180, 180)),  # 180 degrees
+        #             T.RandomRotation(degrees=(270, 270))  # 270 degrees
+        #         ])
+        #     )
         self.transforms.append(T.RandomCrop(size=(crop_size, crop_size)))
         self.transforms = T.Compose(self.transforms)
 
