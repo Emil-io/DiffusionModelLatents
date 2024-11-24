@@ -1179,9 +1179,6 @@ class Trainer:
                             decoded_images = []
                             for latent in all_latents_list:
 
-                                is_within_range = torch.all((latent >= -1) & (latent <= 1))
-                                print(f"All entries in latent are within the range [-1, 1]: {is_within_range}")
-
                                 latent = self.normal_dist.icdf(latent)
                                 latent = (latent * sd) + mean
 
