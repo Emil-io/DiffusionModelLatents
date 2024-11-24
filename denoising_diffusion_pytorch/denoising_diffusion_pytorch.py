@@ -1184,9 +1184,9 @@ class Trainer:
                                 test = torch.all((latent >= 0) & (latent <= 1))
                                 print(f"Betw. 0 and 1: {test}")
                                 test = torch.all((latent >= -1) & (latent <= 1))
-                                print(f"Betw. -1 and 1: {test}")
-                                test = torch.all((latent >= 0) & (latent <= 1))
-                                print(f"Betw. 0 and 1: {test}")
+                                mean = torch.mean(latent)
+                                std = torch.std(latent)
+                                print(f"Mean: {mean:.4f}, Standard Deviation: {std:.4f}")
 
                                 latent = self.normal_dist.icdf(latent)
                                 latent = (latent * sd) + mean
@@ -1195,6 +1195,11 @@ class Trainer:
                                     latent = latent.unsqueeze(0)
 
                                 decoded_image = self.vae.decode(latent).sample
+
+                                mean = torch.mean(decoded_image)
+                                std = torch.std(decoded_image)
+                                print(f"After vae Mean: {mean:.4f}, Standard Deviation: {std:.4f}")
+
                                 decoded_image = self.vae_image_processor.postprocess(decoded_image, output_type="pt").squeeze(dim=0)
                                 decoded_images.append(decoded_image)
 
