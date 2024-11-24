@@ -1184,12 +1184,16 @@ class Trainer:
                                 test = torch.all((latent >= 0) & (latent <= 1))
                                 print(f"Betw. 0 and 1: {test}")
                                 test = torch.all((latent >= -1) & (latent <= 1))
-                                mean = torch.mean(latent)
-                                std = torch.std(latent)
-                                print(f"Mean: {mean:.4f}, Standard Deviation: {std:.4f}")
+                                test_mean = torch.mean(latent)
+                                test_std = torch.std(latent)
+                                print(f"Mean: {test_mean:.4f}, Standard Deviation: {test_std:.4f}")
 
                                 latent = self.normal_dist.icdf(latent)
                                 latent = (latent * sd) + mean
+
+                                test_mean = torch.mean(latent)
+                                test_std = torch.std(latent)
+                                print(f"After rescale Mean: {test_mean:.4f}, Standard Deviation: {test_std:.4f}")
 
                                 if latent.dim() == 3:
                                     latent = latent.unsqueeze(0)
