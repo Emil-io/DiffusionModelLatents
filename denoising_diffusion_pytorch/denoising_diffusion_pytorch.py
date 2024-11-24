@@ -1180,6 +1180,8 @@ class Trainer:
                             decoded_images = []
                             for latent in all_latents_list:
 
+                                latent = torch.clamp(latent, min=1e-6, max=1.0 - 1e-6)
+
                                 min_value = torch.min(latent)
                                 max_value = torch.max(latent)
                                 print(f"Min value: {min_value:.6f}")
