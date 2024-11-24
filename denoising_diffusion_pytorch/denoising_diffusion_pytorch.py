@@ -880,8 +880,8 @@ class Dataset(Dataset):
 
         assert len(self.paths) > 0, f"No .pt files found in {folder}"
 
-        self.mean = 1.1045
-        self.sd = 1.9434
+        self.mean = 1.0247
+        self.sd = 3.8074
 
         self.normal_dist = torch.distributions.Normal(1, 1)
 
@@ -1170,8 +1170,8 @@ class Trainer:
                         with torch.inference_mode():
                             milestone = self.step // self.save_and_sample_every
 
-                            mean = 1.1045
-                            sd = 1.9434
+                            mean = 1.0247
+                            sd = 3.8074
 
                             batches = num_to_groups(self.num_samples, 1)
                             all_latents_list = [self.ema.ema_model.sample(batch_size=1) for _ in batches]
