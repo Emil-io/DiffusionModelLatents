@@ -900,7 +900,7 @@ class Dataset(Dataset):
         #             T.RandomRotation(degrees=(270, 270))  # 270 degrees
         #         ])
         #     )
-        self.transforms.append(T.RandomCrop(size=(crop_size, crop_size)))
+        # self.transforms.append(T.RandomCrop(size=(crop_size, crop_size)))
         self.transforms = T.Compose(self.transforms)
 
     def __len__(self):
@@ -912,8 +912,8 @@ class Dataset(Dataset):
         latent = torch.load(path, weights_only=True).to(dtype=torch.float32)
 
         _, _, height, width = latent.shape  # Assuming tensor is in (B, C, H, W) format
-        if self.crop_size > min(height, width):
-            print(f"Warning: The crop size ({self.crop_size}) is larger than the minimum dimension "
+        if self.crop_size != height or self.crop_size != width:
+            print(f"Warning: The crop size ({self.crop_size}) is not correct "
                   f"({min(height, width)}) of the latent tensor.")
 
         latent = latent.squeeze(0)
