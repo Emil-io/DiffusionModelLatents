@@ -909,7 +909,9 @@ class Dataset(Dataset):
     def __getitem__(self, index):
         # Load the latent tensor
         path = self.paths[index]
-        latent = torch.load(path, weights_only=True).to(dtype=torch.float16)
+        latent = torch.load(path, weights_only=True).to(dtype=torch.float32)
+
+        print(latent.shape())
 
         _, _, height, width = latent.shape  # Assuming tensor is in (B, C, H, W) format
         if self.crop_size != height or self.crop_size != width:
@@ -1178,6 +1180,11 @@ class Trainer:
 
                             decoded_images = []
                             for latent in all_latents_list:
+
+                                test = torch.all((latent >= -1) & (latent <= 1))
+                                print(f"Betw. -1 and 1: {test}")
+                                test = torch.all((latent >= 0) & (latent <= 1))
+                                print(f"Betw. 0 and 1: {test}")
 
                                 latent = self.normal_dist.icdf(latent)
                                 latent = (latent * sd) + mean
