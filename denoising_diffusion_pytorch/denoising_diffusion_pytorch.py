@@ -883,7 +883,7 @@ class Dataset(Dataset):
         self.mean = 0.8908
         self.sd = 3.8311
 
-        self.normal_dist = torch.distributions.Normal(1, 1)
+        self.normal_dist = torch.distributions.Normal(0, 1)
 
         # Transformations
         self.transforms = []
@@ -993,7 +993,7 @@ class Trainer:
         self.vae_image_processor = vae_image_processor
 
         self.sigmoid_transform = transforms.SigmoidTransform()
-        self.normal_dist = torch.distributions.Normal(1, 1)
+        self.normal_dist = torch.distributions.Normal(0, 1)
 
         # accelerator
 
