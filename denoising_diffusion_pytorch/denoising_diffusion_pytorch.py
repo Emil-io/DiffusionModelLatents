@@ -920,6 +920,7 @@ class Dataset(Dataset):
 
         # Rescale the tensor
         latent = (latent - self.mean) / self.sd
+        latent = torch.clamp(latent, min=1e-6, max=1.0 - 1e-6)
 
         latent = self.normal_dist.cdf(latent)
 
@@ -1179,30 +1180,28 @@ class Trainer:
                             decoded_images = []
                             for latent in all_latents_list:
 
-                                test = torch.all((latent >= -1) & (latent <= 1))
-                                print(f"Betw. -1 and 1: {test}")
-                                test = torch.all((latent >= 0) & (latent <= 1))
-                                print(f"Betw. 0 and 1: {test}")
-                                test = torch.all((latent >= -1) & (latent <= 1))
-                                test_mean = torch.mean(latent)
-                                test_std = torch.std(latent)
-                                print(f"Mean: {test_mean:.4f}, Standard Deviation: {test_std:.4f}")
+                                min_value = torch.min(latent)
+                                max_value = torch.max(latent)
+                                print(f"Min value: {min_value:.6f}")
+                                print(f"Max value: {max_value:.6f}")
 
                                 latent = self.normal_dist.icdf(latent)
                                 latent = (latent * sd) + mean
 
-                                test_mean = torch.mean(latent)
-                                test_std = torch.std(latent)
-                                print(f"After rescale Mean: {test_mean:.4f}, Standard Deviation: {test_std:.4f}")
+                                min_value = torch.min(latent)
+                                max_value = torch.max(latent)
+                                print(f"After Resc. Min value: {min_value:.6f}")
+                                print(f"After Resc. Max value: {max_value:.6f}")
 
                                 if latent.dim() == 3:
                                     latent = latent.unsqueeze(0)
 
                                 decoded_image = self.vae.decode(latent).sample
 
-                                mean = torch.mean(decoded_image)
-                                std = torch.std(decoded_image)
-                                print(f"After vae Mean: {mean:.4f}, Standard Deviation: {std:.4f}")
+                                min_value = torch.min(latent)
+                                max_value = torch.max(latent)
+                                print(f"After Vae Min value: {min_value:.6f}")
+                                print(f"After Vae Max value: {max_value:.6f}")
 
                                 decoded_image = self.vae_image_processor.postprocess(decoded_image, output_type="pt").squeeze(dim=0)
                                 decoded_images.append(decoded_image)
