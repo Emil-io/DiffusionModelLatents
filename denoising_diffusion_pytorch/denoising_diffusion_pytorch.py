@@ -882,37 +882,37 @@ class Dataset(Dataset):
 
         # Transformations
         self.transforms = []
-        if augment_horizontal_flip:
-            self.transforms.append(T.RandomHorizontalFlip(p=0.5))
-        if augment_vertical_flip:
-            self.transforms.append(T.RandomVerticalFlip(p=0.5))
-        if augment_rotations:
-            self.transforms.append(
-                T.RandomChoice([
-                    T.RandomRotation(degrees=(0, 0)),  # 0 degrees
-                    T.RandomRotation(degrees=(90, 90)),  # 90 degrees
-                    T.RandomRotation(degrees=(180, 180)),  # 180 degrees
-                    T.RandomRotation(degrees=(270, 270))  # 270 degrees
-                ])
-            )
-        self.transforms.append(T.RandomCrop(size=(128, 128)))
+        # if augment_horizontal_flip:
+        #     self.transforms.append(T.RandomHorizontalFlip(p=0.5))
+        # if augment_vertical_flip:
+        #     self.transforms.append(T.RandomVerticalFlip(p=0.5))
+        # if augment_rotations:
+        #     self.transforms.append(
+        #         T.RandomChoice([
+        #             T.RandomRotation(degrees=(0, 0)),  # 0 degrees
+        #             T.RandomRotation(degrees=(90, 90)),  # 90 degrees
+        #             T.RandomRotation(degrees=(180, 180)),  # 180 degrees
+        #             T.RandomRotation(degrees=(270, 270))  # 270 degrees
+        #         ])
+        #     )
+        self.transforms.append(T.CenterCrop(size=(128, 128)))
         self.transforms = T.Compose(self.transforms)
 
     def __len__(self):
         return len(self.paths)
 
     def __getitem__(self, index):
-        # Load the latent tensor
         path = self.paths[index]
         latent = torch.load(path, weights_only=True).to(dtype=torch.float32)
         latent = latent.squeeze(0)
 
-        # Rescale the tensor
         latent = latent * self.scale_factor
 
-        # Apply augmentations
         latent = self.transforms(latent)
         latent = self.sigmoid_transform(latent)
+
+        epsilon = 1e-6
+        latent = torch.clamp(latent, epsilon, 1 - epsilon)
 
         return latent
 
