@@ -973,15 +973,15 @@ class Trainer:
         self.vae = vae
         self.vae_image_processor = vae_image_processor
 
+        self.global_stds = torch.tensor(global_stds).view(-1, 1, 1)
+        self.global_means = torch.tensor(global_means).view(-1, 1, 1)
+
         # accelerator
 
         self.accelerator = Accelerator(
             split_batches = split_batches,
             mixed_precision = mixed_precision_type if amp else 'no'
         )
-
-        self.global_means = torch.tensor(global_means).view(-1, 1, 1).to(self.device)
-        self.global_stds = torch.tensor(global_stds).view(-1, 1, 1).to(self.device)
 
         # model
 
