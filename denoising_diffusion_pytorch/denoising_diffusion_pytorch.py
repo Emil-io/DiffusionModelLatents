@@ -1203,7 +1203,11 @@ class Trainer:
         """
         Apply channel-wise normalization to scale the latent tensor to a standard normal distribution.
         """
-        latent = (latent - self.global_means) / self.global_stds
+        # Ensure `self.global_means` and `self.global_stds` are on the same device as `latent`
+        global_means = torch.tensor(self.global_means, device=latent.device, dtype=latent.dtype)
+        global_stds = torch.tensor(self.global_stds, device=latent.device, dtype=latent.dtype)
+
+        latent = (latent - global_means) / global_stds
         latent = torch.clamp(latent, -4, 4)  # Ensure the range is within [-4, 4]
         latent = (latent / 8) + 0.5  # Scale to [0, 1]
         return latent
@@ -1212,7 +1216,11 @@ class Trainer:
         """
         Reverse channel-wise normalization to restore the original latent tensor range.
         """
+        # Ensure `self.global_means` and `self.global_stds` are on the same device as `latent`
+        global_means = torch.tensor(self.global_means, device=latent.device, dtype=latent.dtype)
+        global_stds = torch.tensor(self.global_stds, device=latent.device, dtype=latent.dtype)
+
         latent = (latent - 0.5) * 8  # Undo scaling to [0, 1]
-        latent = latent * self.global_stds + self.global_means  # Reverse normalization
+        latent = latent * global_stds + global_means  # Reverse normalization
         # latent = torch.clamp(latent, -4, 4)  # Optionally clamp to the original range
         return latent
