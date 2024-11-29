@@ -854,7 +854,8 @@ class Dataset(Dataset):
         scale_factor=1.0,
         crop_size=128,
         autoencoder=None,
-        scale_latent_fn=None
+        scale_latent_fn=None,
+        device=None
     ):
         """
         Args:
@@ -871,7 +872,7 @@ class Dataset(Dataset):
         self.scale_factor = scale_factor
         self.crop_size = crop_size
         self.autoencoder = autoencoder
-        self.scale_latent_fn = scale_latent_fn
+        self.device = device
 
         self.paths = list(Path(folder).glob("*.pt"))
 
@@ -900,7 +901,7 @@ class Dataset(Dataset):
 
     def __getitem__(self, index):
         path = self.paths[index]
-        latent = torch.load(path, weights_only=True).to(dtype=torch.float32)
+        latent = torch.load(path, weights_only=True).to(dtype=torch.float16).to(self.device)
         latent = latent.squeeze(0)
 
         latent = self.transforms(latent)
@@ -973,15 +974,15 @@ class Trainer:
         self.vae = vae
         self.vae_image_processor = vae_image_processor
 
-        self.global_stds = torch.tensor(global_stds).view(-1, 1, 1)
-        self.global_means = torch.tensor(global_means).view(-1, 1, 1)
-
         # accelerator
 
         self.accelerator = Accelerator(
             split_batches = split_batches,
             mixed_precision = mixed_precision_type if amp else 'no'
         )
+
+        self.global_stds = torch.tensor(global_stds).view(-1, 1, 1).to(self.device)
+        self.global_means = torch.tensor(global_means).view(-1, 1, 1).to(self.device)
 
         # model
 
@@ -1015,7 +1016,8 @@ class Trainer:
                 folder=folder,
                 crop_size=crop_size,
                 autoencoder=vae,
-                scale_latent_fn=self.scale_latent
+                scale_latent_fn=self.scale_latent,
+                device=self.device
             )
 
         assert len(self.ds) >= 100, 'you should have at least 100 images in your folder. at least 10k images recommended'
