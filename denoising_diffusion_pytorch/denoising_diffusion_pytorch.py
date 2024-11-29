@@ -1081,24 +1081,6 @@ class Trainer:
     def device(self):
         return self.accelerator.device
 
-    def scale_latent(self, latent):
-        """
-        Apply channel-wise normalization to scale the latent tensor to a standard normal distribution.
-        """
-        latent = (latent - self.global_means) / self.global_stds
-        latent = torch.clamp(latent, -4, 4)  # Ensure the range is within [-4, 4]
-        latent = (latent / 8) + 0.5  # Scale to [0, 1]
-        return latent
-
-    def reverse_scale_latent(self, latent):
-        """
-        Reverse channel-wise normalization to restore the original latent tensor range.
-        """
-        latent = (latent - 0.5) * 8  # Undo scaling to [0, 1]
-        latent = latent * self.global_stds + self.global_means  # Reverse normalization
-        # latent = torch.clamp(latent, -4, 4)  # Optionally clamp to the original range
-        return latent
-
     def save(self, milestone):
         if not self.accelerator.is_local_main_process:
             return
@@ -1216,3 +1198,21 @@ class Trainer:
                 pbar.update(1)
 
         accelerator.print('training complete')
+
+    def scale_latent(self, latent):
+        """
+        Apply channel-wise normalization to scale the latent tensor to a standard normal distribution.
+        """
+        latent = (latent - self.global_means) / self.global_stds
+        latent = torch.clamp(latent, -4, 4)  # Ensure the range is within [-4, 4]
+        latent = (latent / 8) + 0.5  # Scale to [0, 1]
+        return latent
+
+    def reverse_scale_latent(self, latent):
+        """
+        Reverse channel-wise normalization to restore the original latent tensor range.
+        """
+        latent = (latent - 0.5) * 8  # Undo scaling to [0, 1]
+        latent = latent * self.global_stds + self.global_means  # Reverse normalization
+        # latent = torch.clamp(latent, -4, 4)  # Optionally clamp to the original range
+        return latent
