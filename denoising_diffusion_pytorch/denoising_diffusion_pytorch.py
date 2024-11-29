@@ -852,12 +852,9 @@ class Dataset(Dataset):
         self,
         folder,
         scale_factor=1.0,
-        augment_horizontal_flip=True,
-        augment_vertical_flip=True,
-        augment_rotations=True,
         crop_size=128,
         autoencoder=None,
-        sigmoid_transform = None
+        scale_latent_fn=None
     ):
         """
         Args:
@@ -874,7 +871,7 @@ class Dataset(Dataset):
         self.scale_factor = scale_factor
         self.crop_size = crop_size
         self.autoencoder = autoencoder
-        self.sigmoid_transform = sigmoid_transform
+        self.scale_latent_fn = scale_latent_fn
 
         self.paths = list(Path(folder).glob("*.pt"))
 
@@ -906,13 +903,10 @@ class Dataset(Dataset):
         latent = torch.load(path, weights_only=True).to(dtype=torch.float32)
         latent = latent.squeeze(0)
 
-        latent = latent * self.scale_factor
-
         latent = self.transforms(latent)
-        latent = self.sigmoid_transform(latent)
 
-        epsilon = 1e-6
-        latent = torch.clamp(latent, epsilon, 1 - epsilon)
+        if self.scale_latent_fn:
+            latent = self.scale_latent_fn(latent)
 
         return latent
 
@@ -965,21 +959,22 @@ class Trainer:
         max_grad_norm = 1.,
         num_fid_samples = 50000,
         save_best_and_latest_only = False,
-        vae_scale_factor,
         crop_size,
         vae,
-        vae_image_processor
+        vae_image_processor,
+        global_means,
+        global_stds
     ):
         super().__init__()
 
         ### adjustments
 
-        self.vae_scale_factor = vae_scale_factor
         self.crop_size = crop_size
         self.vae = vae
         self.vae_image_processor = vae_image_processor
 
-        self.sigmoid_transform = transforms.SigmoidTransform()
+        self.global_means = torch.tensor(global_means).view(-1, 1, 1).to(self.device)
+        self.global_stds = torch.tensor(global_stds).view(-1, 1, 1).to(self.device)
 
         # accelerator
 
@@ -1016,7 +1011,12 @@ class Trainer:
 
         # dataset and dataloader
 
-        self.ds = Dataset(folder=folder, scale_factor=vae_scale_factor, crop_size=crop_size, autoencoder=vae, sigmoid_transform=self.sigmoid_transform)
+        self.ds = self.ds = Dataset(
+                folder=folder,
+                crop_size=crop_size,
+                autoencoder=vae,
+                scale_latent_fn=self.scale_latent
+            )
 
         assert len(self.ds) >= 100, 'you should have at least 100 images in your folder. at least 10k images recommended'
 
@@ -1080,6 +1080,24 @@ class Trainer:
     @property
     def device(self):
         return self.accelerator.device
+
+    def scale_latent(self, latent):
+        """
+        Apply channel-wise normalization to scale the latent tensor to a standard normal distribution.
+        """
+        latent = (latent - self.global_means) / self.global_stds
+        latent = torch.clamp(latent, -4, 4)  # Ensure the range is within [-4, 4]
+        latent = (latent / 8) + 0.5  # Scale to [0, 1]
+        return latent
+
+    def reverse_scale_latent(self, latent):
+        """
+        Reverse channel-wise normalization to restore the original latent tensor range.
+        """
+        latent = (latent - 0.5) * 8  # Undo scaling to [0, 1]
+        latent = latent * self.global_stds + self.global_means  # Reverse normalization
+        # latent = torch.clamp(latent, -4, 4)  # Optionally clamp to the original range
+        return latent
 
     def save(self, milestone):
         if not self.accelerator.is_local_main_process:
@@ -1163,11 +1181,7 @@ class Trainer:
                             decoded_images = []
                             for latent in all_latents_list:
 
-                                is_within_range = torch.all((latent >= -1) & (latent <= 1))
-                                print(f"All entries in latent are within the range [-1, 1]: {is_within_range}")
-
-                                latent = self.sigmoid_transform.inv(latent)
-                                latent = latent / self.vae_scale_factor
+                                latent = self.reverse_scale_latent(latent)
 
                                 if latent.dim() == 3:
                                     latent = latent.unsqueeze(0)
